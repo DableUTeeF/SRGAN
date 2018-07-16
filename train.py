@@ -1,4 +1,6 @@
 import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 from utils import progress_bar, DotDict
 import torch
 import torch.optim as optim
@@ -15,12 +17,13 @@ from models import Generator, Discriminator, FeatureExtractor
 
 if __name__ == '__main__':
 
-    opt = DotDict()
+    opt = DotDict({})
     opt.add_argument('--dataset', value='folder')
-    opt.add_argument('--dataroot', value='./data')
-    opt.add_argument('--workers', value=2)
-    opt.add_argument('--batchSize', value=16)
-    opt.add_argument('--imageSize', value=15)
+    # opt.add_argument('--dataroot', value='/root/palm/PycharmProjects/DATA/SRGAN_HR/')
+    opt.add_argument('--dataroot', value='/media/palm/Unimportant/DIV2K/')
+    opt.add_argument('--workers', value=0)
+    opt.add_argument('--batchSize', value=2)
+    opt.add_argument('--imageSize', value=224)
     opt.add_argument('--upSampling', value=2)
     opt.add_argument('--nEpochs', value=100)
     opt.add_argument('--generatorLR', value=0.0001)
@@ -39,17 +42,18 @@ if __name__ == '__main__':
     if torch.cuda.is_available() and not opt.cuda:
         print("WARNING: You have a CUDA device, so you should probably run with --cuda")
 
-    transform = transforms.Compose([transforms.RandomCrop(opt.imageSize * opt.upSampling),
+    transform = transforms.Compose([transforms.Resize(512),
+                                    transforms.RandomCrop(opt.imageSize * opt.upSampling),
                                     transforms.ToTensor()])
 
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    normalize = transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                     std=[0.5, 0.5, 0.5])
 
     scale = transforms.Compose([transforms.ToPILImage(),
                                 transforms.Scale(opt.imageSize),
                                 transforms.ToTensor(),
-                                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                     std=[0.229, 0.224, 0.225])
+                                transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                                     std=[0.5, 0.5, 0.5])
                                 ])
 
     dataset = datasets.ImageFolder(root=opt.dataroot, transform=transform)

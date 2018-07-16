@@ -41,11 +41,13 @@ class UpsampleBlock(nn.Module):
     # Implements resize-convolution
     def __init__(self, in_channels, out_channels, _):
         super(UpsampleBlock, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, 3, stride=1, padding=1, bias=False)
+        self.conv = nn.Conv2d(in_channels, out_channels*4, 3, stride=1, padding=1, bias=False)
         self.shuffler = nn.PixelShuffle(2)
 
     def forward(self, x):
-        return F.relu(self.shuffler(self.conv(x)))
+        x = self.conv(x)
+        x = self.shuffler(x)
+        return F.relu(x)
 
 
 def make_block(block, in_planes, planes, num_blocks, stride):
@@ -82,18 +84,19 @@ class Generator(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=9, stride=1, padding=4, bias=False)
         self.res_blocks = make_block(BasicBlock, 64, 64, 5, stride=1)
-        self.conv2 = nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(256)
-        self.upsampling_blocks = make_block(UpsampleBlock, 256, 256, 2, None)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(64)
+        # self.upsampling_blocks = make_block(UpsampleBlock, 64, 256, 2, None)
+        self.upsampling_blocks = UpsampleBlock(64, 256, None)
         self.conv3 = nn.Conv2d(256, 3, kernel_size=9, stride=1, padding=4, bias=False)
 
     def forward(self, x):
-        conv1 = self.conv1(x)
-        out = F.relu(conv1)
+        x = self.conv1(x)
+        out = F.relu(x)
         out = self.res_blocks(out)
         out = self.conv2(out)
         out = self.bn2(out)
-        out += conv1
+        out += x
         out = self.upsampling_blocks(out)
         return self.conv3(out)
 

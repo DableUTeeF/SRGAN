@@ -207,4 +207,4 @@ class DotDict(dict):
         return self[item]
 
     def add_argument(self, argument, value):
-        self[argument] = value
+        self[argument.split('--')[-1]] = value
