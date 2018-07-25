@@ -83,21 +83,21 @@ class Generator(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=9, stride=1, padding=4, bias=False)
-        self.res_blocks = make_block(BasicBlock, 64, 64, 5, stride=1)
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(64)
+        self.res_blocks = make_block(BasicBlock, 256, 256, 5, stride=1)
+        self.conv2 = nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(256)
         # self.upsampling_blocks = make_block(UpsampleBlock, 64, 256, 2, None)
         self.upsampling_blocks = UpsampleBlock(64, 256, None)
         self.conv3 = nn.Conv2d(256, 3, kernel_size=9, stride=1, padding=4, bias=False)
 
     def forward(self, x):
         x = self.conv1(x)
-        out = F.relu(x)
-        out = self.res_blocks(out)
+        x = F.relu(x)
+        x = self.upsampling_blocks(x)
+        out = self.res_blocks(x)
         out = self.conv2(out)
         out = self.bn2(out)
         out += x
-        out = self.upsampling_blocks(out)
         return self.conv3(out)
 
 
