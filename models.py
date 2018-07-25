@@ -110,7 +110,8 @@ class Discriminator(nn.Module):
         self.conv_block1 = ConvBlock(64, 128, None)
         self.conv_block2 = ConvBlock(128, 256, None)
         self.conv_block3 = ConvBlock(256, 512, None)
-        self.fc1 = nn.Linear(512, 1024, bias=False)
+        self.conv3 = nn.Conv2d(512, 32, kernel_size=1, stride=1, padding=1, bias=False)
+        self.fc1 = nn.Linear(28800, 1024, bias=False)
         self.fc2 = nn.Linear(1024, 1)
 
     def forward(self, x):
@@ -122,6 +123,8 @@ class Discriminator(nn.Module):
         x = self.conv_block1(x)
         x = self.conv_block2(x)
         x = self.conv_block3(x)
+        x = self.conv3(x)
+        x = x.view(x.size(0), -1)
         x = self.fc1(x)
         x = F.leaky_relu(x, 0.2)
         x = self.fc2(x)

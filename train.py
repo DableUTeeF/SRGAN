@@ -1,5 +1,5 @@
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 from utils import progress_bar, DotDict
 import torch
@@ -19,10 +19,9 @@ if __name__ == '__main__':
 
     opt = DotDict({})
     opt.add_argument('--dataset', value='folder')
-    # opt.add_argument('--dataroot', value='/root/palm/PycharmProjects/DATA/SRGAN_HR/')
-    opt.add_argument('--dataroot', value='/media/palm/Unimportant/DIV2K/')
+    opt.add_argument('--dataroot', value='/root/palm/PycharmProjects/DATA/SRGAN_HR/')
     opt.add_argument('--workers', value=0)
-    opt.add_argument('--batchSize', value=2)
+    opt.add_argument('--batchSize', value=1)
     opt.add_argument('--imageSize', value=224)
     opt.add_argument('--upSampling', value=2)
     opt.add_argument('--nEpochs', value=100)
@@ -64,12 +63,12 @@ if __name__ == '__main__':
     generator = Generator()
     if opt.generatorWeights != '':
         generator.load_state_dict(torch.load(opt.generatorWeights))
-    print(generator)
+    # print(generator)
 
     discriminator = Discriminator()
     if opt.discriminatorWeights != '':
         discriminator.load_state_dict(torch.load(opt.discriminatorWeights))
-    print(discriminator)
+    # print(discriminator)
 
     # For the content loss
     feature_extractor = FeatureExtractor(torchvision.models.vgg19(pretrained=True))
@@ -108,9 +107,11 @@ if __name__ == '__main__':
 
             # Downsample images to low resolution
             for j in range(opt.batchSize):
-                low_res[j] = scale(high_res_real[j])
-                high_res_real[j] = normalize(high_res_real[j])
-
+                try:
+                    low_res[j] = scale(high_res_real[j])
+                    high_res_real[j] = normalize(high_res_real[j])
+                except IndexError:
+                    pass
             # Generate real and fake inputs
             if opt.cuda:
                 high_res_real = Variable(high_res_real.cuda())
@@ -127,7 +128,7 @@ if __name__ == '__main__':
             generator_content_loss.backward()
             optim_generator.step()
 
-            progress_bar(i, len(dataloader), f'Loss: {generator_content_loss.data[0]/(i+1):.{7}}')
+            progress_bar(i, len(dataloader), f'Loss: {generator_content_loss.data[0]/(i+1):.4f}')
 
         log_value('generator_mse_loss', mean_generator_content_loss / len(dataloader), epoch)
 
@@ -194,11 +195,11 @@ if __name__ == '__main__':
             generator_total_loss.backward()
             optim_generator.step()
 
-            progress_bar(i, len(dataloader), f'DisLoss: {discriminator_loss.data[0]/(i+1):.{7}}, '
-                                             f'GeneratorLoss(Content/Advers/Total): '
-                                             f'{generator_content_loss.data[0]/(i+1):.{7}}/'
-                                             f'{generator_adversarial_loss.data[0]/(i+1):.{7}}/'
-                                             f'{generator_total_loss.data[0]/(i+1):.{7}}'
+            progress_bar(i, len(dataloader), f'DisLoss: {discriminator_loss.data[0]/(i+1):.4f}, '
+                                             f'GenLoss(Content/Advers/Total): '
+                                             f'{generator_content_loss.data[0]/(i+1):.4f}/'
+                                             f'{generator_adversarial_loss.data[0]/(i+1):.4f}/'
+                                             f'{generator_total_loss.data[0]/(i+1):.4f}'
                          )
 
         # sys.stdout.write(
